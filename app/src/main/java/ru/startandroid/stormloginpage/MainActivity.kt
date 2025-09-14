@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,31 +34,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import ru.startandroid.stormloginpage.ui.theme.StormLoginPageTheme
+import ru.startandroid.stormloginpage.ui.theme.textFieldColors
+import androidx.compose.ui.res.dimensionResource
+import androidx.activity.viewModels
 
 
 class MainActivity : ComponentActivity() {
+    private val loginViewModel: LoginViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            var isLoading by remember { mutableStateOf(true) }
+            StormLoginPageTheme {
+                var isLoading by remember { mutableStateOf(true) }
 
-            LaunchedEffect(Unit) {
-                delay(3000)
-                isLoading = false
-            }
-            if (isLoading) {
-                SplashScreen()
-            } else {
-                LoginScreen()
+                LaunchedEffect(Unit) {
+                    delay(3000)
+                    isLoading = false
+                }
+                if (isLoading) {
+                    SplashScreen()
+                } else {
+                    LoginScreen(loginViewModel)
+                }
             }
         }
     }
@@ -70,15 +74,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun SplashScreen() = Box(
     Modifier
-        .fillMaxSize()
-        .background(color = Color.Black),
+        .fillMaxSize(),
     Alignment.Center
 ) {
     Image(
         painter = painterResource(id = R.mipmap.frame_19219),
         contentDescription = "",
         alignment = Alignment.Center, modifier = Modifier
-            .padding(115.dp,355.dp).size(149.dp, 110.dp)
+            .size(dimensionResource(id = R.dimen.splash_image_size))
     )
 
     Text(
@@ -86,113 +89,30 @@ private fun SplashScreen() = Box(
         textAlign = TextAlign.Center,
         fontSize = 14.sp,
         color = Color(0xFF676767),
-        modifier = Modifier.align(Alignment.BottomCenter).padding(64.dp)
+        modifier = Modifier.align(Alignment.BottomCenter).padding(dimensionResource(id = R.dimen.splash_text_padding))
     )
 }
 
 @Composable
-@Preview
-private fun LoginScreen() {
+private fun LoginScreen(loginViewModel: LoginViewModel) {
     val image = painterResource(R.drawable.typography)
-    var isButtonEnabled = false
+
     Column (
         modifier = Modifier
-            .background(Color.Black)
             .fillMaxSize()
-            .padding(top = 65.dp),
+            .padding(top = dimensionResource(id = R.dimen.splash_text_padding)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
             painter = image,
             contentDescription = null,
-            modifier = Modifier.size(210.dp, 80.dp)
+            modifier = Modifier.size(
+                width = dimensionResource(id = R.dimen.logo_size_width),
+                height = dimensionResource(id = R.dimen.logo_size_height)
+            )
         )
-        Column(
-            modifier = Modifier
-                .background(Color.Black)
-                .fillMaxWidth()
-                .fillMaxHeight(0.47f)
-                .padding(top = 188.dp, start = 11.dp, end = 11.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            var login by remember { mutableStateOf("") }
-            var errorLoginText: String? = null
-            var isLoginError = false
-            when (login) {
-                "", "Логин_Юзера" -> isLoginError = false
-                else -> isLoginError = true
-            }
-
-            if (isLoginError) {
-                if (!login.any { it in '\u0400'..'\u04FF' }) {
-                    errorLoginText = "Логин пользователя должен быть на кириллице"
-                } else {
-                    errorLoginText = "Неверный логин"
-                }
-            }
-            LoginTextField(
-                value = login,
-                onValueChange = { login = it },
-                label = "Логин",
-                isLoginError = isLoginError,
-                errorLoginText = errorLoginText
-            )
-
-
-            var password by remember { mutableStateOf("") }
-            var errorPasswordText: String? = null
-            var isPasswordError = false
-
-            if (password.length < 6 && password.isNotEmpty()) {
-                errorPasswordText = "Пароль должен содержать не менее 6 символов"
-                isPasswordError = true
-            } else if (password.any { !password.any { it in 'a'..'z' || it in 'A'..'Z' } }) {
-                errorPasswordText = "Пароль должен содержать хотя бы одну латинскую букву"
-                isPasswordError = true
-            } else if (password.any { !password.any {  it.isDigit() }}) {
-                errorPasswordText = "Пароль должен содержать хотя бы одну цифру"
-                isPasswordError = true
-            } else {
-                errorPasswordText = null
-                isPasswordError = false
-            }
-
-            PasswordTextField(
-                value = password,
-                onValueChange = {
-                    if (it.length <= 12) {
-                    password = it
-                } },
-                label = "Пароль",
-                isPasswordError = isPasswordError,
-                errorPasswordText = errorPasswordText
-            )
-            if (!isPasswordError && !isLoginError && password != "" && login != "") {
-                isButtonEnabled = true
-            }
-        }
-
-        Row (
-            modifier = Modifier
-                .fillMaxSize().padding(end = 11.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Button(
-                onClick = {},
-                shape = RoundedCornerShape(6.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isButtonEnabled) Color.White else Color.Gray,
-                    contentColor = Color.DarkGray
-                ),
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(47.dp)
-            ) {
-                Text(text = "ВОЙТИ")
-            }
-        }
+        LoginForm(loginViewModel)
+        LoginButton(loginViewModel.isButtonEnabled())
     }
 }
 
@@ -204,25 +124,13 @@ fun LoginTextField(
     isLoginError: Boolean = false,
     errorLoginText: String? = ""
 ) {
-   // var showPassword by remember { mutableStateOf(false) }
     Column() {
         TextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = TextStyle(fontSize =  18.sp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Unspecified),
-            modifier = Modifier.width(367.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = Color(0xFF000000),
-                unfocusedTextColor = Color.Gray,
-                unfocusedLabelColor = Color.DarkGray,
-                unfocusedSupportingTextColor = Color.Red,
-                focusedContainerColor = Color.Black,
-                focusedTextColor = Color.White,
-                focusedIndicatorColor = if (!isLoginError) Color.DarkGray else Color.Red,
-                focusedLabelColor = Color.DarkGray,
-                focusedSupportingTextColor = Color.Red
-            ),
+            modifier = Modifier.width(dimensionResource(id = R.dimen.text_field_width)),
+            colors = textFieldColors(isError = isLoginError),
             supportingText = {
                 if (errorLoginText != null) {
                     Text(errorLoginText)
@@ -247,23 +155,15 @@ fun PasswordTextField(
     Column() {
         TextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = {
+                if (it.length <= 12) {
+                    onValueChange(it)
+                }
+            },
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            modifier = Modifier.width(367.dp),
-            textStyle = TextStyle(fontSize = 18.sp, color = Color.White),
+            modifier = Modifier.width(dimensionResource(id = R.dimen.text_field_width)),
             label = { Text(label) },
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = Color(0xFF000000),
-                unfocusedTextColor = Color.Gray,
-                unfocusedLabelColor = Color.DarkGray,
-                unfocusedIndicatorColor = Color.DarkGray,
-                unfocusedSupportingTextColor = Color.Red,
-                focusedContainerColor = Color.Black,
-                focusedTextColor = Color.White,
-                focusedIndicatorColor = if (isPasswordError) Color.Red else Color.DarkGray,
-                focusedLabelColor = Color.DarkGray,
-                focusedSupportingTextColor = Color.Red
-            ),
+            colors = textFieldColors(isError = isPasswordError),
             supportingText = {
                 if (errorPasswordText != null) {
                     Text(errorPasswordText)
@@ -273,10 +173,10 @@ fun PasswordTextField(
                 IconButton (onClick = { showPassword = !showPassword }) {
                     Icon(
                         painter = painterResource(
-                            if (showPassword) R.drawable.property_1_hide else R.drawable.property_1_show
+                            if (showPassword) R.drawable.hide_1 else R.drawable.show_1
                         ),
                         contentDescription = "Toggle password visibility",
-                        modifier = Modifier.size(50.dp).padding(0.dp),
+                        modifier = Modifier.size(dimensionResource(id = R.dimen.login_button_height)).padding(0.dp),
                         tint = Color.White
                     )
                 }
@@ -284,3 +184,65 @@ fun PasswordTextField(
         )
     }
 }
+
+@Composable
+private fun LoginForm(loginViewModel: LoginViewModel) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.48f)
+            .padding(
+                top = dimensionResource(id = R.dimen.login_form_padding_top),
+                start = dimensionResource(id = R.dimen.login_form_padding_start),
+                end = dimensionResource(id = R.dimen.login_form_padding_start)
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LoginTextField(
+            value = loginViewModel.login,
+            onValueChange = {
+                loginViewModel.onLoginChange(it)
+            },
+            errorLoginText = loginViewModel.validateLogin()
+        )
+
+        PasswordTextField(
+            value = loginViewModel.password,
+            onValueChange = {
+                loginViewModel.onPasswordChange(it)
+            },
+            errorPasswordText = loginViewModel.validatePassword()
+        )
+    }
+}
+
+@Composable
+private fun LoginButton(isButtonEnabled: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize().padding(
+                end = dimensionResource(id = R.dimen.login_form_padding_start)
+            ),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Button(
+            onClick = {},
+            shape = RoundedCornerShape(dimensionResource(id = R.dimen.login_button_padding_bottom)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isButtonEnabled) Color.White else Color.Gray,
+                contentColor = Color.DarkGray
+            ),
+            contentPadding = PaddingValues(
+                dimensionResource(id = R.dimen.login_form_padding_start),
+                dimensionResource(id = R.dimen.login_button_padding_bottom)
+            ),
+            modifier = Modifier
+                .width(dimensionResource(id = R.dimen.login_button_width))
+                .height(dimensionResource(id = R.dimen.login_button_height))
+        ) {
+            Text(text = "ВОЙТИ")
+        }
+    }
+}
+
